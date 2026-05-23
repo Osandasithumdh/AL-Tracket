@@ -1,63 +1,57 @@
 import streamlit as st
 import time
-from datetime import datetime
 
-# Page config
 st.set_page_config(layout="wide", page_title="Master Planner Pro")
 
-# CSS - Advanced 3D & Neon UI
+# CSS - 3D & Neon Styling
 st.markdown("""
     <style>
     .stApp { background: #050505; color: white; }
-    
-    /* 3D Rotating Header */
-    .header-box { display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; }
-    .box {
-        width: 100px; height: 100px;
-        background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-        border: 2px solid #06b6d4; border-radius: 20px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 30px; font-weight: 800; color: #a855f7;
-        box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
-        transition: 0.6s; cursor: pointer;
-    }
-    .box:hover { transform: rotateY(180deg); border-color: #a855f7; box-shadow: 0 0 30px #a855f7; }
-
-    /* Cards */
-    .card {
-        background: #111; padding: 25px; border-radius: 25px;
+    .neon-card { 
+        background: #111; padding: 25px; border-radius: 20px; 
         border: 1px solid #333; box-shadow: 10px 10px 20px #000;
+        margin-bottom: 20px;
     }
+    .stButton>button { width: 100%; border-radius: 10px; background: #06b6d4; color: white; }
     </style>
 """, unsafe_allow_html=True)
 
-# 1. Header (PLANE)
-st.markdown('<div class="header-box">' + 
-            "".join([f'<div class="box">{l}</div>' for l in ["P","L","A","N","E"]]) + 
-            '</div>', unsafe_allow_html=True)
+# Session State for Tasks and Timer
+if 'tasks' not in st.session_state: st.session_state.tasks = []
 
-# 2. Sidebar - AP Style
+# Sidebar
 with st.sidebar:
-    st.image("master_planner_logo.png", width=120) # මෙතනට ඔයාගේ ලෝගෝ එක දෙන්න
-    st.markdown("<h2 style='text-align:center; color:#06b6d4;'>AP DASHBOARD</h2>", unsafe_allow_html=True)
-    menu = st.radio("", ["🏠 Home", "✅ Tasks", "⏱️ Timer", "📅 Calendar"])
+    st.title("🚀 Planner")
+    page = st.radio("Menu", ["⏱️ Stopwatch", "✅ Tasks"])
 
-# 3. Main Logic
-if menu == "🏠 Home":
-    st.title("⚡ Daily Overview")
-    st.markdown('<div class="card"><h3>Welcome to your 3D Planner</h3></div>', unsafe_allow_html=True)
+# 1. Stopwatch Page
+if page == "⏱️ Stopwatch":
+    st.title("⏱️ Stopwatch")
+    if 'start_time' not in st.session_state: st.session_state.start_time = 0
+    
+    col1, col2 = st.columns(2)
+    if col1.button("Start"): st.session_state.start_time = time.time()
+    if col2.button("Reset"): st.session_state.start_time = 0
+    
+    display = st.empty()
+    if st.session_state.start_time != 0:
+        elapsed = time.time() - st.session_state.start_time
+        display.markdown(f"## {elapsed:.2f} seconds")
 
-elif menu == "✅ Tasks":
-    st.title("📝 Task Management")
-    task = st.text_input("Add task")
-    if st.button("Add"): st.write("Task Added!")
-    st.markdown('<div class="card">○ Task 1<br>○ Task 2</div>', unsafe_allow_html=True)
-
-elif menu == "⏱️ Timer":
-    st.title("⏱️ Focus Timer")
-    if st.button("Start Timer"):
-        st.write("Timer Active!")
-
-elif menu == "📅 Calendar":
-    st.title("📅 Calendar")
-    st.date_input("Date")
+# 2. Task Manager Page
+elif page == "✅ Tasks":
+    st.title("📝 My Tasks")
+    new_task = st.text_input("Add a task...")
+    if st.button("Add Task") and new_task:
+        st.session_state.tasks.append({"task": new_task, "done": False})
+    
+    st.write("---")
+    for i, t in enumerate(st.session_state.tasks):
+        c1, c2 = st.columns([0.1, 0.9])
+        if c1.checkbox("", key=i):
+            t['done'] = True
+        
+        if t['done']:
+            st.markdown(f"~~{t['task']}~~ ✅")
+        else:
+            st.write(t['task'])
