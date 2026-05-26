@@ -1,68 +1,48 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
+import datetime
+import calendar
 import time
-import json
-import os
-from datetime import datetime
+import random
 
-# --- UI & CSS ---
+# --- UI Config ---
 st.set_page_config(layout="wide")
-st.markdown("""
+
+# --- Dynamic Color Scheme (මාසෙන් මාසෙට වෙනස් වෙනවා) ---
+def get_month_color():
+    month = datetime.datetime.now().month
+    colors = {1: "#FF5733", 2: "#33FF57", 3: "#3357FF", 4: "#FF33A1", 5: "#A133FF", 6: "#FFD433", 7: "#33FFF5", 8: "#FF8C33", 9: "#8CFF33", 10: "#33FF8C", 11: "#FF3333", 12: "#5733FF"}
+    return colors.get(month, "#9b51e0")
+
+ui_color = get_month_color()
+
+# --- CSS (3D & Neon Effects) ---
+st.markdown(f"""
     <style>
-    .title-3d { font-size: 40px; font-weight: bold; color: #fff; text-shadow: 2px 2px #ff4b4b; }
-    .stButton>button:hover { box-shadow: 0 0 15px #00f2fe; transform: scale(1.05); }
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700&display=swap');
+    .stApp {{ font-family: 'Noto Sans Sinhala', sans-serif; }}
+    .title-3d {{ color: white; text-shadow: 2px 2px 0px #aaa, 4px 4px 0px {ui_color}; font-size: 50px; font-weight: bold; }}
+    .stButton>button {{ border-radius: 20px; transition: 0.3s; }}
+    .stButton>button:hover {{ box-shadow: 0 0 20px {ui_color}; transform: scale(1.05); }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- Logic ---
-if 'subjects' not in st.session_state: st.session_state.subjects = {}
-if 'tasks' not in st.session_state: st.session_state.tasks = []
+# --- Header Section ---
+st.markdown("<h1 class='title-3d'>⚡ Daily Planner</h1>", unsafe_allow_html=True)
 
-st.markdown("<h1 class='title-3d'>⚡ DAILY PLANNER</h1>", unsafe_allow_html=True)
+# --- Subject Management ---
+if 'subjects' not in st.session_state: st.session_state.subjects = []
 
-# --- Subject Add ---
-with st.sidebar:
-    new_sub = st.text_input("සබ්ජෙක්ට් එක:")
+col1, col2 = st.columns([2, 1])
+with col1:
+    new_sub = st.text_input("සබ්ජෙක්ට් එකේ නම:")
     if st.button("Add Subject"):
-        st.session_state.subjects[new_sub] = {"time": 0, "tasks": []}
-        st.rerun()
-
-# --- Main Dashboard ---
-for sub, data in st.session_state.subjects.items():
-    with st.expander(f"📚 {sub}"):
-        # Timer
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write(f"⏱️ ගතකල කාලය: {data['time']} තත්පර")
-            if st.button("Start Timer", key=f"start_{sub}"):
-                # ටයිමර් ලොජික් (පැය/විනාඩි)
-                st.session_state.subjects[sub]['time'] += 3600 
-                st.rerun()
-        
-        # Tasks
-        task = st.text_input(f"Task for {sub}:", key=f"t_{sub}")
-        if st.button("Add Task", key=f"btn_{sub}"):
-            st.session_state.tasks.append({"sub": sub, "task": task, "done": False})
+        if new_sub:
+            st.session_state.subjects.append({"name": new_sub, "tasks": [], "time": 0})
             st.rerun()
 
-# --- Task List & Progress ---
-st.subheader("📋 කම්ප්ලීට් ටාස්ක්ස්")
-for t in st.session_state.tasks:
-    col1, col2 = st.columns([4, 1])
-    col1.write(f"{'✅' if t['done'] else '⭕'} {t['task']} ({t['sub']})")
-    if col2.button("Done", key=t['task']):
-        t['done'] = True
-        st.rerun()
-
-# --- Analytics (Graph) ---
-st.subheader("📈 වැඩ ප්‍රගතිය")
-if st.session_state.tasks:
-    df = pd.DataFrame(st.session_state.tasks)
-    fig = px.bar(df, x='sub', color='sub', title="පැය ගණන අනුව ප්‍රගතිය")
-    st.plotly_chart(fig)
-
-# --- Calendar (Simple) ---
-st.subheader("📅 කැලැන්ඩරය")
-today = datetime.now().day
-st.write(f"අද දිනය: {today}")
+# --- Dashboard View ---
+st.divider()
+for sub in st.session_state.subjects:
+    with st.expander(f"📁 {sub['name']} (Click to Open)"):
+        # මෙතන ටයිමර් සහ ටාස්ක් කොටස් එකතු කරන්න ඕනේ
+        st.write("ටයිමර් සහ ටාස්ක් පැනල් එක මෙතනට එනවා...")
