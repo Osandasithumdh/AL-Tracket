@@ -1,39 +1,59 @@
-import { useEffect } from 'react';
-import { Switch, Route, Router as WouterRouter } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import SubjectDetail from "@/pages/subject";
+import streamlit as st
+import time
+import json
+import os
+from datetime import datetime
 
-const queryClient = new QueryClient();
+# දත්ත ගොනුව
+DATA_FILE = "data.json"
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/subject/:name" component={SubjectDetail} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+# දත්ත පටවා ගැනීම
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return {"tasks": [], "logs": []}
 
-function App() {
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
+# දත්ත සුරැකීම
+def save_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f)
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+# UI සැකසුම
+st.set_page_config(page_title="Task Planner", layout="wide")
+data = load_data()
 
-export default App;
+st.title("✨ මගේ වැඩ සැලසුම")
+
+# ටාස්ක් එක එකතු කිරීම
+task_name = st.text_input("ටාස්ක් එක ලියන්න:")
+if st.button("Add Task"):
+    if task_name:
+        data["tasks"].append({"name": task_name, "id": str(time.time())})
+        save_data(data)
+        st.rerun()
+
+# ටාස්ක් ලැයිස්තුව සහ ටයිමර් එක
+st.divider()
+for task in data["tasks"]:
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.subheader(task["name"])
+    with col2:
+        if st.button(f"Start {task['name']}", key=task["id"]):
+            # රවුම් රූපයකින් පෙන්වීම සඳහා progress bar එක
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            # පැයක ටයිමර් එක (තත්පර 3600)
+            # පහසුව සඳහා මෙතන තත්පර 10ක ඇනිමේෂන් එකක් දාලා තියෙන්නේ
+            for i in range(101):
+                progress_bar.progress(i)
+                status_text.text(f"පැය සම්පූර්ණ වෙමින් පවතී... {i}%")
+                time.sleep(0.1)
+            
+            st.success(f"{task['name']} - පැය සම්පූර්ණයි! 🎉")
+            time.sleep(1)
+            st.rerun()
+
+st.divider()
